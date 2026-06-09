@@ -39,19 +39,28 @@
     </div>
 
     <script>
+        // ======= PENTING: GANTI DENGAN URL & KEY MILIKMU =======
         const SUPABASE_URL = "https://XYZ.supabase.co"; 
         const SUPABASE_KEY = "TOKEN_ANON_KEY_KAMU";
+        // =======================================================
+        
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
         let selectedMethod = '';
 
         document.addEventListener('DOMContentLoaded', loadMethods);
 
         async function loadMethods() {
-            const { data, error } = await _supabase.from('payment_methods').select('*').eq('is_active', true);
+            // Kita ambil semua data tanpa filter 'is_active' dulu agar menghindari error nama kolom salah
+            const { data, error } = await _supabase.from('payment_methods').select('*');
+            
             document.getElementById('loading-methods').classList.add('hidden');
             const container = document.getElementById('methods-container');
             container.innerHTML = '';
+
+            if (error) {
+                container.innerHTML = `<div class="col-span-2 text-xs text-rose-400 text-center">Error Supabase: ${error.message}</div>`;
+                return;
+            }
 
             if (data && data.length > 0) {
                 data.forEach(m => {
@@ -63,7 +72,7 @@
                     `;
                 });
             } else {
-                container.innerHTML = '<div class="col-span-2 text-xs text-rose-400 text-center">Gagal memuat metode pembayaran dari database.</div>';
+                container.innerHTML = '<div class="col-span-2 text-xs text-amber-400 text-center">Koneksi Berhasil, tapi Tabel Databasemu masih kosong. Silakan isi data lewat SQL Editor atau Admin Panel!</div>';
             }
         }
 
@@ -88,7 +97,7 @@
             if(!error) {
                 window.location.href = `/invoice.html?id=${invId}`;
             } else {
-                alert('Gagal: ' + error.message);
+                alert('Gagal membuat transaksi: ' + error.message);
             }
         });
     </script>
