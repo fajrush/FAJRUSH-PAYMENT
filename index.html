@@ -33,27 +33,162 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4 mb-6">
-            <button id="btn-qris" onclick="selectPayment('qris')" class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all flex flex-col items-center justify-center text-center group">
+            <button id="btn-qris" onclick="selectPayment('qris')" class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:border-slate-600 transition-all flex flex-col items-center justify-center text-center group">
                 <i class="fas fa-qrcode text-2xl text-cyan-400 group-hover:scale-110 transition-transform mb-2"></i>
                 <span class="font-bold text-sm tracking-wide">QRIS AUTOMATIC</span>
             </button>
-            <button id="btn-dana" onclick="selectPayment('dana')" class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all flex flex-col items-center justify-center text-center group">
+            <button id="btn-dana" onclick="selectPayment('dana')" class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:border-slate-600 transition-all flex flex-col items-center justify-center text-center group">
                 <i class="fas fa-wallet text-2xl text-blue-400 group-hover:scale-110 transition-transform mb-2"></i>
                 <span class="font-bold text-sm tracking-wide">DANA</span>
             </button>
-            <button id="btn-gopay" onclick="selectPayment('gopay')" class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all flex flex-col items-center justify-center text-center group">
+            <button id="btn-gopay" onclick="selectPayment('gopay')" class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:border-slate-600 transition-all flex flex-col items-center justify-center text-center group">
                 <i class="fas fa-coins text-2xl text-emerald-400 group-hover:scale-110 transition-transform mb-2"></i>
                 <span class="font-bold text-sm tracking-wide">GOPAY</span>
             </button>
-            <button id="btn-seabank" onclick="selectPayment('seabank')" class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all flex flex-col items-center justify-center text-center group">
+            <button id="btn-seabank" onclick="selectPayment('seabank')" class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:border-slate-600 transition-all flex flex-col items-center justify-center text-center group">
                 <i class="fas fa-university text-2xl text-orange-400 group-hover:scale-110 transition-transform mb-2"></i>
                 <span class="font-bold text-sm tracking-wide">TEPI LAUT</span>
             </button>
         </div>
 
-        <div id="detail-box" class="hidden bg-slate-950/90 border border-indigo-950/50 rounded-2xl p-5 text-center transition-all animate-fade-in">
+        <div id="detail-box" class="hidden bg-slate-950/90 border border-indigo-950/50 rounded-2xl p-5 text-center transition-all">
             <h3 id="display-title" class="font-extrabold text-base tracking-widest mb-4 text-indigo-400"></h3>
             
             <div id="area-qris" class="hidden flex flex-col items-center justify-center">
-                <div onclick="openZoom()" class="p-2 bg-white rounded-2xl mb-2 shadow-lg cursor-zoom-in hover:opacity-90 transition relative group">
-                    <img id="img-qris" src="" alt="QRIS Admin" class="
+                <div onclick="openZoom()" class="p-2 bg-white rounded-2xl mb-2 shadow-lg cursor-zoom-in hover:opacity-90 transition relative group max-w-[260px] w-full">
+                    <img id="img-qris" src="" alt="QRIS HD" class="w-full h-auto object-contain rounded-xl">
+                    <div class="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span class="text-xs font-bold text-white"><i class="fas fa-search-plus mr-1"></i> Klik Perbesar</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-slate-500 mb-3">Ketuk gambar QRIS untuk memperbesar</p>
+            </div>
+
+            <div id="area-transfer" class="hidden flex flex-col items-center justify-center">
+                <p class="text-xs text-slate-400 mb-2">Salin Nomor Rekening/Tujuan:</p>
+                <div class="flex items-center justify-between bg-slate-900 border border-slate-800 px-4 py-3 rounded-xl w-full">
+                    <span id="display-number" class="font-mono font-bold tracking-widest text-lg text-emerald-400"></span>
+                    <button onclick="copyText()" class="text-indigo-400 hover:text-indigo-300 ml-2 px-2 py-1 bg-indigo-950/40 rounded-lg text-xs border border-indigo-900/50"><i class="far fa-copy mr-1"></i> Copy</button>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-900 pt-5 mt-5">
+                <p class="text-xs text-slate-400 mb-3 font-semibold">Sudah Selesai Transfer? Hubungi Admin:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="confirmTransaction('whatsapp')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/10">
+                        <i class="fab fa-whatsapp text-sm"></i> Admin WhatsApp
+                    </button>
+                    <button onclick="confirmTransaction('telegram')" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-sky-600/10">
+                        <i class="fab fa-telegram-plane text-sm"></i> Admin Telegram
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="zoom-modal" onclick="closeZoom()" class="fixed inset-0 bg-black/95 z-50 hidden flex flex-col items-center justify-center p-4 cursor-zoom-out">
+        <div class="absolute top-4 right-4 text-white text-xl bg-slate-900/80 w-10 h-10 rounded-full flex items-center justify-center border border-slate-700">
+            <i class="fas fa-times"></i>
+        </div>
+        <img id="img-zoom" src="" alt="QRIS JUMBO" class="max-w-full max-h-[85vh] object-contain rounded-2xl border-2 border-white/20 shadow-2xl">
+        <p class="text-slate-500 text-xs mt-4 tracking-wider"><i class="fas fa-compress mr-1"></i> Klik di mana saja untuk mengecilkan</p>
+    </div>
+
+    <script>
+        // ISI KONTAK ADMIN KAMU DI SINI
+        const configAdmin = {
+            whatsapp: "6281234567890", // Awali dengan 62
+            telegram: "username_admin_kamu" // Username telegram tanpa @
+        };
+
+        const defaultPayment = {
+            qris: "https://placehold.co/200x200/png?text=QRIS+READY",
+            dana: "0812-3456-7890",
+            gopay: "0812-8888-9999",
+            seabank: "901-222-333-444"
+        };
+
+        let selectedMethod = "";
+
+        function getUpdatedData() {
+            return {
+                qris: localStorage.getItem('cfg_qris') || defaultPayment.qris,
+                dana: localStorage.getItem('cfg_dana') || defaultPayment.dana,
+                gopay: localStorage.getItem('cfg_gopay') || defaultPayment.gopay,
+                seabank: localStorage.getItem('cfg_seabank') || defaultPayment.seabank
+            }
+        }
+
+        // FUNGSI KLIK TOMBOL PEMBAYARAN (FIXED 100% RESPONSIVE)
+        function selectPayment(method) {
+            selectedMethod = method;
+            const liveData = getUpdatedData();
+            
+            // Efek menyalakan tombol aktif
+            ['qris', 'dana', 'gopay', 'seabank'].forEach(m => {
+                document.getElementById(`btn-${m}`).classList.remove('active-glow');
+            });
+            document.getElementById(`btn-${method}`).classList.add('active-glow');
+
+            // Buka kotak detail utama di bawahnya
+            document.getElementById('detail-box').classList.remove('hidden');
+            
+            // Teks judul box konfirmasi
+            if (method === 'seabank') {
+                document.getElementById('display-title').textContent = "METODE: TEPI LAUT";
+            } else {
+                document.getElementById('display-title').textContent = `METODE: ${method.toUpperCase()}`;
+            }
+
+            // Logika pemisahan tampilan QRIS vs Nomor Rekening
+            if(method === 'qris') {
+                document.getElementById('area-transfer').classList.add('hidden');
+                document.getElementById('area-qris').classList.remove('hidden');
+                document.getElementById('img-qris').src = liveData.qris;
+                document.getElementById('img-zoom').src = liveData.qris;
+            } else {
+                document.getElementById('area-qris').classList.add('hidden');
+                document.getElementById('area-transfer').classList.remove('hidden');
+                document.getElementById('display-number').textContent = liveData[method];
+            }
+        }
+
+        // FUNGSI ZOOM POPUP MODAL
+        function openZoom() {
+            document.getElementById('zoom-modal').classList.remove('hidden');
+            document.getElementById('zoom-modal').classList.add('flex');
+        }
+
+        function closeZoom() {
+            document.getElementById('zoom-modal').classList.add('hidden');
+            document.getElementById('zoom-modal').classList.remove('flex');
+        }
+
+        function copyText() {
+            const num = document.getElementById('display-number').textContent;
+            navigator.clipboard.writeText(num);
+            alert('Nomor berhasil disalin! 🚀');
+        }
+
+        function confirmTransaction(platform) {
+            if(!selectedMethod) return alert('Pilih metode dulu bro!');
+
+            const waktuSekarang = new Date();
+            const formatTanggal = waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const formatWaktu = waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + " WIB";
+            const randomID = "TRX-" + Math.floor(100000 + Math.random() * 900000);
+
+            const namaMetodeTeks = selectedMethod === 'seabank' ? 'TEPI LAUT' : selectedMethod.toUpperCase();
+
+            const teksPesan = `HALO ADMIN, SAYA SUDAH TRANSFER PENGGUNA ✨\n\n📝 DETAIL TRANSAKSI LENGKAP:\n----------------------------------\n🆔 ID Transaksi : ${randomID}\n💳 Metode Bayar : ${namaMetodeTeks}\n📅 Tanggal      : ${formatTanggal}\n⏰ Waktu/Jam    : ${formatWaktu}\n🟢 Status       : BERHASIL DI-TRANSFER\n----------------------------------\n\nMohon dicek ya min, bukti screenshot transfer saya lampirkan di bawah ini.`;
+            const encodedText = encodeURIComponent(teksPesan);
+
+            if(platform === 'whatsapp') {
+                window.open(`https://api.whatsapp.com/send?phone=${configAdmin.whatsapp}&text=${encodedText}`, '_blank');
+            } else {
+                window.open(`https://t.me/${configAdmin.telegram}?text=${encodedText}`, '_blank');
+            }
+        }
+    </script>
+</body>
+</html>
