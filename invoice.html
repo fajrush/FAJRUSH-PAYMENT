@@ -16,15 +16,19 @@
         </div>
 
         <h2 id="inv-title" class="text-lg font-bold text-white mb-1">INV-XXXX</h2>
-        <p class="text-xs text-gray-400 mb-6">Silakan transfer sesuai detail di bawah ini</p>
+        <p class="text-xs text-gray-400 mb-6">Silakan selesaikan pembayaran Anda</p>
+
+        <div id="qris-container" class="hidden mb-6 bg-white p-4 rounded-xl w-48 h-48 mx-auto border border-gray-700">
+            <img id="qris-image" src="" alt="QRIS Code" class="w-full h-full object-contain">
+        </div>
 
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 text-left space-y-3 mb-6 font-mono text-sm">
             <div class="flex justify-between border-b border-gray-800 pb-2">
                 <span class="text-gray-500">Metode:</span>
                 <span id="detail-method" class="text-white font-bold">-</span>
             </div>
-            <div class="flex justify-between border-b border-gray-800 pb-2">
-                <span class="text-gray-500">Nomor Tujuan:</span>
+            <div id="row-account" class="flex justify-between border-b border-gray-800 pb-2">
+                <span class="text-gray-500">Nomor Rekening/HP:</span>
                 <span id="detail-account" class="text-indigo-400 font-bold tracking-wider">-</span>
             </div>
             <div class="flex justify-between border-b border-gray-800 pb-2">
@@ -37,7 +41,7 @@
             </div>
         </div>
 
-        <p class="text-xs text-gray-500"><i class="fa-solid fa-rotate animate-spin mr-1"></i> Jangan tutup halaman ini, sistem akan mendeteksi otomatis dan mengalihkan Anda jika dana sudah masuk.</p>
+        <p class="text-xs text-gray-500"><i class="fa-solid fa-rotate animate-spin mr-1"></i> Jangan tutup halaman ini. Sistem mendeteksi otomatis dan mengalihkan Anda jika dana masuk.</p>
     </div>
 
     <script>
@@ -52,36 +56,40 @@
         document.addEventListener('DOMContentLoaded', initInvoice);
 
         async function initInvoice() {
-            // 1. Ambil data transaksi
             const { data: tx } = await _supabase.from('transactions').select('*').eq('id', invoiceId).single();
             if(!tx) return alert('Invoice salah!');
 
-            // 2. Ambil detail instruksi bayar dari settingan admin
             const { data: method } = await _supabase.from('payment_methods').select('*').eq('id', tx.method).single();
             
             document.getElementById('detail-method').innerText = method.name;
-            document.getElementById('detail-account').innerText = method.account_number;
             document.getElementById('detail-name').innerText = method.account_name;
             document.getElementById('detail-amount').innerText = "Rp " + tx.amount.toLocaleString('id-ID');
 
-            // 3. Polling Realtime cek status lunas
-            const interval = setInterval(async () => {
-                const { data: currentTx } = await _supabase.from('transactions').select('status').eq('id', invoiceId).single();
-                
-                if(currentTx && currentTx.status === 'PAID') {
-                    clearInterval(interval);
-                    
-                    // Ambil info sosmed admin buat pengalihan
-                    const { data: sosmed } = await _supabase.from('admin_socials').select('*').eq('id', 1).single();
-                    alert('Pembayaran Sukses! Kamu akan dialihkan ke Sosial Media Admin.');
+            // Logika Deteksi QRIS
+            if(method.type.toUpperCase() === 'QRIS') {
+                document.getElementById('qris-container').classList.remove('hidden');
+                document.getElementById('qris-image').src = method.account_number; // link gambar qris
+                document.getElementById('row-account').classList.add('hidden'); // Sembunyikan row rekening teks
+            } else {
+                document.getElementById('detail-account').innerText = method.account_number;
+            }
 
-                    if (sosmed.active_platform === 'whatsapp') {
-                        window.location.href = `https://wa.me/${sosmed.whatsapp_number}?text=Halo%20Admin,%20saya%20sudah%20transfer%20untuk%20${invoiceId}`;
-                    } else {
-                        window.location.href = `https://t.me/${sosmed.telegram_username}`;
+            // Realtime Listener dari Supabase (Auto Redirect Tanpa Refresh)
+            _supabase
+                .channel('transactions-status')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions', filter: `id=eq.${invoiceId}` }, async (payload) => {
+                    if (payload.new.status === 'PAID') {
+                        const { data: sosmed } = await _supabase.from('admin_socials').select('*').eq('id', 1).single();
+                        alert('Pembayaran Sukses! Menuju Sosial Media Admin...');
+                        
+                        if (sosmed.active_platform === 'whatsapp') {
+                            window.location.href = `https://wa.me/${sosmed.whatsapp_number}?text=Halo%20Admin,%20saya%20sudah%20transfer%20untuk%20${invoiceId}`;
+                        } else {
+                            window.location.href = `https://t.me/${sosmed.telegram_username}`;
+                        }
                     }
-                }
-            }, 3000);
+                })
+                .subscribe();
         }
     </script>
 </body>
