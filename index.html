@@ -86,5 +86,99 @@
         </div>
     </div>
 
-    <div id="zoom-modal" onclick="closeZoom()" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 cursor-zoom-out animate-fade-in">
-        <div class="absolute top-4 right-4 text-white text-xl bg-slate-900/80 w-10 h-10 rounded-full
+    <div id="zoom-modal" onclick="closeZoom()" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 cursor-zoom-out">
+        <div class="absolute top-4 right-4 text-white text-xl bg-slate-900/80 w-10 h-10 rounded-full flex items-center justify-center border border-slate-700">
+            <i class="fas fa-times"></i>
+        </div>
+        <img id="img-zoom" src="" alt="QRIS Gede" class="max-w-full max-h-[80vh] object-contain rounded-2xl border-4 border-white shadow-2xl">
+        <p class="text-slate-400 text-xs mt-4 tracking-wider"><i class="fas fa-compress mr-1"></i> Klik di mana saja untuk menutup</p>
+    </div>
+
+    <script>
+        const configAdmin = {
+            whatsapp: "6281234567890", // Ganti pake nomor WA-mu (Wajib awalan 62)
+            telegram: "username_admin_kamu" 
+        };
+
+        const defaultPayment = {
+            qris: "https://placehold.co/200x200/png?text=QRIS+READY",
+            dana: "0812-3456-7890",
+            gopay: "0812-8888-9999",
+            seabank: "901-222-333-444"
+        };
+
+        let selectedMethod = "";
+
+        function getUpdatedData() {
+            return {
+                qris: localStorage.getItem('cfg_qris') || defaultPayment.qris,
+                dana: localStorage.getItem('cfg_dana') || defaultPayment.dana,
+                gopay: localStorage.getItem('cfg_gopay') || defaultPayment.gopay,
+                seabank: localStorage.getItem('cfg_seabank') || defaultPayment.seabank
+            }
+        }
+
+        // FUNGSI UTAMA SELEKSI (SUDAH DIPERBAIKI TOTAL)
+        function selectPayment(method) {
+            selectedMethod = method;
+            const liveData = getUpdatedData();
+            
+            // Efek glow pada tombol pilihan
+            ['qris', 'dana', 'gopay', 'seabank'].forEach(m => {
+                document.getElementById(`btn-${m}`).classList.remove('active-glow');
+            });
+            document.getElementById(`btn-${method}`).classList.add('active-glow');
+
+            // Buka box detail utama
+            document.getElementById('detail-box').classList.remove('hidden');
+            document.getElementById('display-title').textContent = `METODE: ${method === 'seabank' ? 'TEPI LAUT (SEABANK)' : method.toUpperCase()}`;
+
+            // Logika menampilkan area QRIS atau area nomor rekening secara tepat
+            if(method === 'qris') {
+                document.getElementById('area-qris').classList.remove('hidden');
+                document.getElementById('area-transfer').classList.add('hidden');
+                document.getElementById('img-qris').src = liveData.qris;
+                document.getElementById('img-zoom').src = liveData.qris;
+            } else {
+                document.getElementById('area-qris').classList.add('hidden');
+                document.getElementById('area-transfer').classList.remove('hidden');
+                document.getElementById('display-number').textContent = liveData[method];
+            }
+        }
+
+        function openZoom() {
+            document.getElementById('zoom-modal').classList.remove('hidden');
+            document.getElementById('zoom-modal').classList.add('flex');
+        }
+
+        function closeZoom() {
+            document.getElementById('zoom-modal').classList.add('hidden');
+            document.getElementById('zoom-modal').classList.remove('flex');
+        }
+
+        function copyText() {
+            const num = document.getElementById('display-number').textContent;
+            navigator.clipboard.writeText(num);
+            alert('Nomor rekening/e-wallet berhasil disalin! 🚀');
+        }
+
+        function confirmTransaction(platform) {
+            if(!selectedMethod) return alert('Pilih metode dulu bro!');
+
+            const waktuSekarang = new Date();
+            const formatTanggal = waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const formatWaktu = waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + " WIB";
+            const randomID = "TRX-" + Math.floor(100000 + Math.random() * 900000);
+
+            const teksPesan = `HALO ADMIN, SAYA SUDAH TRANSFER PENGGUNA ✨\n\n📝 DETAIL TRANSAKSI LENGKAP:\n----------------------------------\n🆔 ID Transaksi : ${randomID}\n💳 Metode Bayar : ${selectedMethod.toUpperCase()}\n📅 Tanggal      : ${formatTanggal}\n⏰ Waktu/Jam    : ${formatWaktu}\n🟢 Status       : BERHASIL DI-TRANSFER\n----------------------------------\n\nMohon dicek ya min, bukti screenshot transfer saya lampirkan di bawah ini.`;
+            const encodedText = encodeURIComponent(teksPesan);
+
+            if(platform === 'whatsapp') {
+                window.open(`https://api.whatsapp.com/send?phone=${configAdmin.whatsapp}&text=${encodedText}`, '_blank');
+            } else {
+                window.open(`https://t.me/${configAdmin.telegram}?text=${encodedText}`, '_blank');
+            }
+        }
+    </script>
+</body>
+</html>
