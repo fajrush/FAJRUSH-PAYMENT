@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <p class="text-xs text-gray-500"><i class="fa-solid fa-rotate animate-spin mr-1"></i> Jangan tutup halaman ini. Sistem mendeteksi otomatis dan mengalihkan Anda jika dana masuk.</p>
+        <p class="text-xs text-gray-500"><i class="fa-solid fa-rotate animate-spin mr-1"></i> Jangan tutup halaman ini. Sistem mendeteksi otomatis jika dana masuk.</p>
     </div>
 
     <script>
@@ -65,31 +65,27 @@
             document.getElementById('detail-name').innerText = method.account_name;
             document.getElementById('detail-amount').innerText = "Rp " + tx.amount.toLocaleString('id-ID');
 
-            // Logika Deteksi QRIS
             if(method.type.toUpperCase() === 'QRIS') {
                 document.getElementById('qris-container').classList.remove('hidden');
-                document.getElementById('qris-image').src = method.account_number; // link gambar qris
-                document.getElementById('row-account').classList.add('hidden'); // Sembunyikan row rekening teks
+                document.getElementById('qris-image').src = method.account_number;
+                document.getElementById('row-account').classList.add('hidden');
             } else {
                 document.getElementById('detail-account').innerText = method.account_number;
             }
 
-            // Realtime Listener dari Supabase (Auto Redirect Tanpa Refresh)
-            _supabase
-                .channel('transactions-status')
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions', filter: `id=eq.${invoiceId}` }, async (payload) => {
-                    if (payload.new.status === 'PAID') {
-                        const { data: sosmed } = await _supabase.from('admin_socials').select('*').eq('id', 1).single();
-                        alert('Pembayaran Sukses! Menuju Sosial Media Admin...');
-                        
-                        if (sosmed.active_platform === 'whatsapp') {
-                            window.location.href = `https://wa.me/${sosmed.whatsapp_number}?text=Halo%20Admin,%20saya%20sudah%20transfer%20untuk%20${invoiceId}`;
-                        } else {
-                            window.location.href = `https://t.me/${sosmed.telegram_username}`;
-                        }
+            // Polling backup dan Realtime listener lunas
+            setInterval(async () => {
+                const { data: checkTx } = await _supabase.from('transactions').select('status').eq('id', invoiceId).single();
+                if(checkTx && checkTx.status === 'PAID') {
+                    const { data: sosmed } = await _supabase.from('admin_socials').select('*').eq('id', 1).single();
+                    alert('Pembayaran Sukses!');
+                    if (sosmed.active_platform === 'whatsapp') {
+                        window.location.href = `https://wa.me/${sosmed.whatsapp_number}?text=Halo%20Admin,%20saya%20sudah%20transfer%20untuk%20${invoiceId}`;
+                    } else {
+                        window.location.href = `https://t.me/${sosmed.telegram_username}`;
                     }
-                })
-                .subscribe();
+                }
+            }, 3000);
         }
     </script>
 </body>
