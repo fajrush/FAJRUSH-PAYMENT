@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen p-6">
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        <div class="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl">
+            <div>
+                <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-wallet text-indigo-500 mr-2"></i>PAY-BOT ADMIN PANEL</h1>
+                <p class="text-xs text-gray-400">Atur metode bayar, sosmed pengalihan, dan konfirmasi transaksi.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="space-y-6">
+                <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl">
+                    <h2 class="text-sm font-bold text-indigo-400 mb-3"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit Akun Pembayaran</h2>
+                    <form id="method-form" class="space-y-3 text-xs">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Pilih Metode</label>
+                            <select id="set-id" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white">
+                                <option value="qris">QRIS All Payment</option>
+                                <option value="dana">DANA</option>
+                                <option value="gopay">Gopay</option>
+                                <option value="seabank">SeaBank</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Nomor Rekening/HP/Link QRIS</label>
+                            <input type="text" id="set-number" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white" required>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Atas Nama (A/N)</label>
+                            <input type="text" id="set-name" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white" required>
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2.5 rounded-xl font-semibold text-white transition">Simpan Metode</button>
+                    </form>
+                </div>
+
+                <div class="bg-gray-900 border border-gray-800 p-5 rounded-2xl">
+                    <h2 class="text-sm font-bold text-emerald-400 mb-3"><i class="fa-solid fa-share-from-square mr-1"></i> Pengalihan Setelah Lunas</h2>
+                    <form id="social-form" class="space-y-3 text-xs">
+                        <div>
+                            <label class="text-gray-400 block mb-1">Platform Utama</label>
+                            <select id="soc-platform" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white">
+                                <option value="whatsapp">WhatsApp</option>
+                                <option value="telegram">Telegram</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Nomor WA Admin (Contoh: 62812xxx)</label>
+                            <input type="text" id="soc-wa" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 block mb-1">Username Telegram Admin (Tanpa @)</label>
+                            <input type="text" id="soc-tele" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 py-2.5 rounded-xl font-semibold text-white transition">Simpan Sosmed</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 bg-gray-900 border border-gray-800 p-5 rounded-2xl">
+                <h2 class="text-sm font-bold text-white mb-4"><i class="fa-solid fa-list mr-1"></i> Daftar Transaksi Masuk</h2>
+                <div class="overflow-x-auto text-xs">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-gray-800 text-gray-500">
+                                <th class="pb-2">Invoice</th>
+                                <th class="pb-2">Metode</th>
+                                <th class="pb-2">Nominal</th>
+                                <th class="pb-2">Status</th>
+                                <th class="pb-2 text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tx-table-body" class="divide-y divide-gray-800/50">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://XYZ.supabase.co"; 
+        const SUPABASE_KEY = "TOKEN_ANON_KEY_KAMU";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTransactions();
+            loadSocials();
+        });
+
+        // 1. Ambil List Transaksi
+        async function loadTransactions() {
+            const { data } = await _supabase.from('transactions').select('*').order('created_at', { ascending: false });
+            const tbody = document.getElementById('tx-table-body');
+            tbody.innerHTML = '';
+            if(data) {
+                data.forEach(t => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-gray-800/20">
+                            <td class="py-3 font-mono text-white">${t.id}<br><span class="text-[10px] text-gray-500">${t.phone_number}</span></td>
+                            <td class="py-3 uppercase text-gray-400">${t.method}</td>
+                            <td class="py-3 font-bold text-gray-300">Rp ${t.amount.toLocaleString('id-ID')}</td>
+                            <td class="py-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${t.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}">${t.status}</span></td>
+                            <td class="py-3 text-right">
+                                ${t.status === 'PENDING' ? `<button onclick="accTransaksi('${t.id}')" class="bg-indigo-600 hover:bg-indigo-500 px-2 py-1 rounded text-white font-bold text-[10px]">ACC LUNAS</button>` : `<span class="text-emerald-400"><i class="fa-solid fa-circle-check"></i></span>`}
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // 2. ACC Transaksi Jadi PAID (Lunas)
+        async function accTransaksi(id) {
+            await _supabase.from('transactions').update({ status: 'PAID' }).eq('id', id);
+            loadTransactions();
+        }
+
+        // 3. Simpan settingan Akun Pembayaran
+        document.getElementById('method-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('set-id').value;
+            const account_number = document.getElementById('set-number').value;
+            const account_name = document.getElementById('set-name').value;
+
+            await _supabase.from('payment_methods').upsert({ id, account_number, account_name, is_active: true });
+            alert('Metode Pembayaran Terupdate!');
+            document.getElementById('method-form').reset();
+        });
+
+        // 4. Load & Simpan Sosmed
+        async function loadSocials() {
+            const { data } = await _supabase.from('admin_socials').select('*').eq('id', 1).single();
+            if(data) {
+                document.getElementById('soc-platform').value = data.active_platform;
+                document.getElementById('soc-wa').value = data.whatsapp_number;
+                document.getElementById('soc-tele').value = data.telegram_username;
+            }
+        }
+
+        document.getElementById('social-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await _supabase.from('admin_socials').upsert({
+                id: 1,
+                active_platform: document.getElementById('soc-platform').value,
+                whatsapp_number: document.getElementById('soc-wa').value,
+                telegram_username: document.getElementById('soc-tele').value
+            });
+            alert('Settingan Sosmed Tersimpan!');
+        });
+    </script>
+</body>
+</html>
