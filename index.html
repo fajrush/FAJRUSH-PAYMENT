@@ -1,105 +1,132 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout Pembayaran</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
-<body class="bg-gray-950 text-gray-100 flex items-center justify-center min-h-screen p-4">
-
-    <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-2xl">
-        <h2 class="text-xl font-bold mb-1 text-white text-center">Fajrush Payment</h2>
-        <p class="text-gray-400 text-xs text-center mb-6">Silakan isi data dan pilih metode pembayaran</p>
-
-        <form id="checkout-form" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Nomor WhatsApp Kamu</label>
-                <input type="number" id="user-phone" placeholder="Contoh: 081234567xxx" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm" required>
+<div id="detail-box" class="hidden bg-slate-900/80 border border-slate-800 rounded-2xl p-5 text-center animate-fade-in">
+            <h3 id="method-title" class="font-bold text-lg mb-3 tracking-wide text-indigo-300"></h3>
+            
+            <div id="qris-area" class="hidden flex flex-col items-center justify-center">
+                <img id="qris-img" src="https://placehold.co/200x200/png?text=QRIS+Active" alt="QRIS" class="w-48 h-48 rounded-xl border-4 border-white mb-3">
+                <p class="text-xs text-slate-400 mb-4">Scan QRIS di atas untuk menyelesaikan pembayaran</p>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-1">Nominal Transfer (Rp)</label>
-                <input type="number" id="pay-amount" placeholder="Masukkan jumlah uang" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 font-mono text-sm" required>
+            <div id="transfer-area" class="hidden flex flex-col items-center justify-center mb-4">
+                <p class="text-xs text-slate-400 mb-1">Nomor Tujuan / No. Rekening:</p>
+                <div class="flex items-center gap-2 bg-slate-800 px-4 py-2 rounded-xl border border-slate-700 w-full justify-between">
+                    <span id="target-number" class="font-mono font-bold tracking-wider text-base text-white"></span>
+                    <button onclick="copyNumber()" class="text-indigo-400 hover:text-indigo-300 p-1"><i class="far fa-copy"></i></button>
+                </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-400 mb-2">Pilih Metode Pembayaran</label>
-                <div id="loading-methods" class="text-xs text-indigo-400"><i class="fa-solid fa-spinner animate-spin"></i> Memuat metode pembayaran...</div>
-                <div id="methods-container" class="grid grid-cols-2 gap-3">
-                    </div>
+            <div class="border-t border-slate-800 pt-4 mt-2">
+                <p class="text-xs text-slate-400 mb-3">Sudah Transfer? Konfirmasi otomatis ke Admin:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="sendConfirmation('whatsapp')" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/10">
+                        <i class="fab fa-whatsapp text-sm"></i> WhatsApp
+                    </button>
+                    <button onclick="sendConfirmation('telegram')" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-sky-600/10">
+                        <i class="fab fa-telegram-plane text-sm"></i> Telegram
+                    </button>
+                </div>
             </div>
-
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-semibold tracking-wide transition shadow-lg shadow-indigo-600/20 mt-2">
-                Bayar Sekarang <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
-            </button>
-        </form>
+        </div>
     </div>
 
     <script>
-        // ======= PENTING: GANTI DENGAN URL & KEY MILIKMU =======
-        const SUPABASE_URL = "https://XYZ.supabase.co"; 
-        const SUPABASE_KEY = "TOKEN_ANON_KEY_KAMU";
-        // =======================================================
-        
-        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let selectedMethod = '';
+        // Data Default Kontak Admin
+        const adminContact = {
+            whatsapp: "6281234567890", // PENTING: Gunakan format 62, jangan pakai 08
+            telegram: "username_admin_kamu" // Isi dengan username Telegram tanpa tanda @
+        };
 
-        document.addEventListener('DOMContentLoaded', loadMethods);
+        const defaultData = {
+            qris: "https://placehold.co/200x200/png?text=QRIS+Z",
+            dana: "0812-3456-7890",
+            gopay: "0812-3456-7890",
+            seabank: "9012-3456-789"
+        };
 
-        async function loadMethods() {
-            // Kita ambil semua data tanpa filter 'is_active' dulu agar menghindari error nama kolom salah
-            const { data, error } = await _supabase.from('payment_methods').select('*');
+        let currentMethod = "";
+
+        function getPaymentData() {
+            return {
+                qris: localStorage.getItem('qris_url') || defaultData.qris,
+                dana: localStorage.getItem('dana_num') || defaultData.dana,
+                gopay: localStorage.getItem('gopay_num') || defaultData.gopay,
+                seabank: localStorage.getItem('seabank_num') || defaultData.seabank
+            }
+        }
+
+        function selectMethod(method) {
+            currentMethod = method;
+            const data = getPaymentData();
+            const detailBox = document.getElementById('detail-box');
+            const title = document.getElementById('method-title');
+            const qrisArea = document.getElementById('qris-area');
+            const transferArea = document.getElementById('transfer-area');
             
-            document.getElementById('loading-methods').classList.add('hidden');
-            const container = document.getElementById('methods-container');
-            container.innerHTML = '';
+            detailBox.classList.remove('hidden');
+            title.textContent = method.toUpperCase();
 
-            if (error) {
-                container.innerHTML = `<div class="col-span-2 text-xs text-rose-400 text-center">Error Supabase: ${error.message}</div>`;
-                return;
-            }
-
-            if (data && data.length > 0) {
-                data.forEach(m => {
-                    container.innerHTML += `
-                        <div onclick="selectMethod('${m.id}')" id="card-${m.id}" class="border border-gray-800 bg-gray-950/50 p-3 rounded-xl cursor-pointer text-center hover:border-indigo-500 transition">
-                            <div class="text-sm font-bold text-white">${m.name}</div>
-                            <div class="text-[10px] text-gray-500">${m.type}</div>
-                        </div>
-                    `;
-                });
+            if (method === 'qris') {
+                qrisArea.classList.remove('hidden');
+                transferArea.classList.add('hidden');
+                document.getElementById('qris-img').src = data.qris;
             } else {
-                container.innerHTML = '<div class="col-span-2 text-xs text-amber-400 text-center">Koneksi Berhasil, tapi Tabel Databasemu masih kosong. Silakan isi data lewat SQL Editor atau Admin Panel!</div>';
+                qrisArea.classList.add('hidden');
+                transferArea.classList.remove('hidden');
+                document.getElementById('target-number').textContent = data[method];
             }
         }
 
-        function selectMethod(id) {
-            selectedMethod = id;
-            document.querySelectorAll('#methods-container > div').forEach(el => el.classList.remove('border-indigo-500', 'bg-indigo-600/10'));
-            document.getElementById(`card-${id}`).classList.add('border-indigo-500', 'bg-indigo-600/10');
+        function copyNumber() {
+            const num = document.getElementById('target-number').textContent;
+            navigator.clipboard.writeText(num);
+            alert('Nomor berhasil disalin! ✨');
         }
 
-        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if(!selectedMethod) return alert('Pilih metode pembayaran dulu bos!');
+        // FUNGSI KIRIM CHAT OTOMATIS DENGAN REAL TIME & DATE
+        function sendConfirmation(platform) {
+            // Generate Waktu & Tanggal Real-time saat tombol diklik
+            const sekarang = new Date();
+            
+            const infoTanggal = sekarang.toLocaleDateString('id-ID', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            const infoWaktu = sekarang.toLocaleTimeString('id-ID', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            }) + " WIB";
 
-            const phone = document.getElementById('user-phone').value;
-            const amount = document.getElementById('pay-amount').value;
-            const invId = 'INV-' + Math.floor(1000 + Math.random() * 9000);
+            // Membuat ID Transaksi Acak agar terlihat profesional
+            const trxId = "TRX-" + Math.floor(100000 + Math.random() * 900000);
 
-            const { error } = await _supabase.from('transactions').insert([
-                { id: invId, phone_number: phone, amount: parseInt(amount), method: selectedMethod, status: 'PENDING' }
-            ]);
+            // Format Teks yang akan dikirim
+            const teksFormat = 
+`HALO ADMIN, SAYA SUDAH TRANSFER ✨
 
-            if(!error) {
-                window.location.href = `/invoice.html?id=${invId}`;
-            } else {
-                alert('Gagal membuat transaksi: ' + error.message);
+📝 RINCIAN TRANSAKSI:
+----------------------------------
+🆔 ID Transaksi : ${trxId}
+💳 Metode      : ${currentMethod.toUpperCase()}
+📅 Tanggal     : ${infoTanggal}
+⏰ Waktu       : ${infoWaktu}
+🟢 Status      : BERHASIL/SUKSES
+----------------------------------
+
+*Bukti transfer/screenshot saya lampirkan di bawah ini ya min.*`;
+
+            // Encode teks agar aman dibaca oleh URL link
+            const teksEncoded = encodeURIComponent(teksFormat);
+
+            if (platform === 'whatsapp') {
+                const urlWa = `https://api.whatsapp.com/send?phone=${adminContact.whatsapp}&text=${teksEncoded}`;
+                window.open(urlWa, '_blank');
+            } else if (platform === 'telegram') {
+                const urlTg = `https://t.me/${adminContact.telegram}?text=${teksEncoded}`;
+                // Catatan: Telegram via web link text kadang langsung masuk jika didukung aplikasi desktop/mobile kamu
+                window.open(urlTg, '_blank');
             }
-        });
+        }
     </script>
-</body>
-</html>
