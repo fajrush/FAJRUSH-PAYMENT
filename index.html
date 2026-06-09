@@ -47,18 +47,21 @@
             </button>
             <button id="btn-seabank" onclick="selectPayment('seabank')" class="p-4 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all flex flex-col items-center justify-center text-center group">
                 <i class="fas fa-university text-2xl text-orange-400 group-hover:scale-110 transition-transform mb-2"></i>
-                <span class="font-bold text-sm tracking-wide">SEABANK</span>
+                <span class="font-bold text-sm tracking-wide">TEPI LAUT</span>
             </button>
         </div>
 
-        <div id="detail-box" class="hidden bg-slate-950/90 border border-indigo-950/50 rounded-2xl p-5 text-center animate-fade-in">
+        <div id="detail-box" class="hidden bg-slate-950/90 border border-indigo-950/50 rounded-2xl p-5 text-center">
             <h3 id="display-title" class="font-extrabold text-base tracking-widest mb-4 text-indigo-400"></h3>
             
             <div id="area-qris" class="hidden flex flex-col items-center justify-center">
-                <div class="p-3 bg-white rounded-2xl mb-3 shadow-lg">
-                    <img id="img-qris" src="" alt="QRIS Admin" class="w-44 h-44 object-contain">
+                <div onclick="openZoom()" class="p-2 bg-white rounded-2xl mb-2 shadow-lg cursor-zoom-in hover:opacity-90 transition relative group max-w-[240px]">
+                    <img id="img-qris" src="" alt="QRIS Admin" class="w-full h-auto max-h-[240px] object-contain rounded-xl">
+                    <div class="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <span class="text-xs font-bold text-white"><i class="fas fa-search-plus mr-1"></i> Klik Perbesar</span>
+                    </div>
                 </div>
-                <p class="text-[11px] text-slate-400">Silakan scan kode QR di atas melalui aplikasi e-wallet kamu</p>
+                <p class="text-[11px] text-indigo-400 animate-pulse mb-3">💡 Ketuk gambar QRIS untuk memperbesar</p>
             </div>
 
             <div id="area-transfer" class="hidden flex flex-col items-center justify-center">
@@ -83,82 +86,5 @@
         </div>
     </div>
 
-    <script>
-        // Data Default Kontak Sosmed Admin
-        const configAdmin = {
-            whatsapp: "6281234567890", // Ganti pake nomor WA-mu (Wajib awalan 62)
-            telegram: "username_admin_kamu" // Ganti pake username telegrammu tanpa @
-        };
-
-        const defaultPayment = {
-            qris: "https://placehold.co/200x200/png?text=QRIS+READY",
-            dana: "0812-3456-7890",
-            gopay: "0812-8888-9999",
-            seabank: "901-222-333-444"
-        };
-
-        let selectedMethod = "";
-
-        // Ambil setingan terbaru dari admin panel (localStorage)
-        function getUpdatedData() {
-            return {
-                qris: localStorage.getItem('cfg_qris') || defaultPayment.qris,
-                dana: localStorage.getItem('cfg_dana') || defaultPayment.dana,
-                gopay: localStorage.getItem('cfg_gopay') || defaultPayment.gopay,
-                seabank: localStorage.getItem('cfg_seabank') || defaultPayment.seabank
-            }
-        }
-
-        function selectPayment(method) {
-            selectedMethod = method;
-            const liveData = getUpdatedData();
-            
-            // Atur CSS tombol aktif
-            ['qris', 'dana', 'gopay', 'seabank'].forEach(m => {
-                document.getElementById(`btn-${m}`).classList.remove('active-glow');
-            });
-            document.getElementById(`btn-${method}`).classList.add('active-glow');
-
-            // Tampilkan box rincian
-            document.getElementById('detail-box').classList.remove('hidden');
-            document.getElementById('display-title').textContent = `METODE: ${method.toUpperCase()}`;
-
-            if(method === 'qris') {
-                document.getElementById('area-qris').classList.remove('hidden');
-                document.getElementById('area-transfer').classList.add('hidden');
-                document.getElementById('img-qris').src = liveData.qris;
-            } else {
-                document.getElementById('area-qris').classList.add('hidden');
-                document.getElementById('area-transfer').classList.remove('hidden');
-                document.getElementById('display-number').textContent = liveData[method];
-            }
-        }
-
-        function copyText() {
-            const num = document.getElementById('display-number').textContent;
-            navigator.clipboard.writeText(num);
-            alert('Nomor rekening/e-wallet berhasil disalin! 🚀');
-        }
-
-        function confirmTransaction(platform) {
-            if(!selectedMethod) return alert('Pilih metode dulu bro!');
-
-            // Ambil waktu asli perangkat pengguna saat klik tombol
-            const waktuSekarang = new Date();
-            const formatTanggal = waktuSekarang.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            const formatWaktu = waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + " WIB";
-            const randomID = "TRX-" + Math.floor(100000 + Math.random() * 900000);
-
-            // Template teks rapi sesuai request
-            const teksPesan = `HALO ADMIN, SAYA SUDAH TRANSFER PENGGUNA ✨\n\n📝 DETAIL TRANSAKSI LENGKAP:\n----------------------------------\n🆔 ID Transaksi : ${randomID}\n💳 Metode Bayar : ${selectedMethod.toUpperCase()}\n📅 Tanggal      : ${formatTanggal}\n⏰ Waktu/Jam    : ${formatWaktu}\n🟢 Status       : BERHASIL DI-TRANSFER\n----------------------------------\n\nMohon dicek ya min, bukti screenshot transfer saya lampirkan di bawah ini.`;
-            const encodedText = encodeURIComponent(teksPesan);
-
-            if(platform === 'whatsapp') {
-                window.open(`https://api.whatsapp.com/send?phone=${configAdmin.whatsapp}&text=${encodedText}`, '_blank');
-            } else {
-                window.open(`https://t.me/${configAdmin.telegram}?text=${encodedText}`, '_blank');
-            }
-        }
-    </script>
-</body>
-</html>
+    <div id="zoom-modal" onclick="closeZoom()" class="fixed inset-0 bg-black/90 z-50 hidden flex flex-col items-center justify-center p-4 cursor-zoom-out animate-fade-in">
+        <div class="absolute top-4 right-4 text-white text-xl bg-slate-900/80 w-10 h-10 rounded-full
