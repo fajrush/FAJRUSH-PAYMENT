@@ -3,19 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard & Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-950 text-gray-100 font-sans min-h-screen p-6">
+<body class="bg-gray-950 text-gray-100 font-sans min-h-screen">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div id="login-block" class="flex items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-sm bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-2xl">
+            <h2 class="text-xl font-bold mb-1 text-white text-center"><i class="fa-solid fa-lock text-indigo-500 mr-2"></i>Login Admin</h2>
+            <p class="text-gray-400 text-xs text-center mb-6">Masukkan email dan password admin panel</p>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Email Admin</label>
+                    <input type="email" id="login-email" placeholder="admin@email.com" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-400 mb-1">Password</label>
+                    <input type="password" id="login-password" placeholder="******" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500" required>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 py-2.5 rounded-xl font-semibold transition text-sm">Masuk Panel</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="dashboard-block" class="hidden p-6 max-w-6xl mx-auto space-y-6">
         <div class="flex justify-between items-center bg-gray-900 border border-gray-800 p-6 rounded-2xl">
             <div>
-                <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-wallet text-indigo-500 mr-2"></i>PAY-BOT ADMIN PANEL</h1>
-                <p class="text-xs text-gray-400">Atur metode bayar, sosmed pengalihan, dan konfirmasi transaksi.</p>
+                <h1 class="text-xl font-bold text-white"><i class="fa-solid fa-gauge mr-2 text-indigo-500"></i>PAY-BOT ADMIN PANEL</h1>
+                <p class="text-xs text-gray-400">Atur QRIS, DANA, Gopay, SeaBank, dan konfirmasi transaksi lunas.</p>
             </div>
+            <button onclick="handleLogout()" class="bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-4 py-2 rounded-xl text-xs font-bold transition">Logout</button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -26,15 +45,15 @@
                         <div>
                             <label class="text-gray-400 block mb-1">Pilih Metode</label>
                             <select id="set-id" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white">
-                                <option value="qris">QRIS All Payment</option>
+                                <option value="qris">QRIS All Payment (Input Link Gambar QRIS)</option>
                                 <option value="dana">DANA</option>
                                 <option value="gopay">Gopay</option>
                                 <option value="seabank">SeaBank</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-gray-400 block mb-1">Nomor Rekening/HP/Link QRIS</label>
-                            <input type="text" id="set-number" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white" required>
+                            <label class="text-gray-400 block mb-1">Nomor Rekening / HP / Link Gambar QRIS</label>
+                            <input type="text" id="set-number" placeholder="Nomor atau link url gambar" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white" required>
                         </div>
                         <div>
                             <label class="text-gray-400 block mb-1">Atas Nama (A/N)</label>
@@ -55,7 +74,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="text-gray-400 block mb-1">Nomor WA Admin (Contoh: 62812xxx)</label>
+                            <label class="text-gray-400 block mb-1">Nomor WA Admin (Format: 628xxx)</label>
                             <input type="text" id="soc-wa" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-white">
                         </div>
                         <div>
@@ -93,12 +112,39 @@
         const SUPABASE_KEY = "TOKEN_ANON_KEY_KAMU";
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        document.addEventListener('DOMContentLoaded', () => {
-            loadTransactions();
-            loadSocials();
+        document.addEventListener('DOMContentLoaded', checkSession);
+
+        // Fungsi Autentikasi Cek Login
+        async function checkSession() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                document.getElementById('login-block').classList.add('hidden');
+                document.getElementById('dashboard-block').classList.remove('hidden');
+                loadTransactions();
+                loadSocials();
+            }
+        }
+
+        // Handle Form Login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            const { error } = await _supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Login Gagal: ' + error.message);
+            } else {
+                checkSession();
+            }
         });
 
-        // 1. Ambil List Transaksi
+        // Handle Logout
+        async function handleLogout() {
+            await _supabase.auth.signOut();
+            window.location.reload();
+        }
+
         async function loadTransactions() {
             const { data } = await _supabase.from('transactions').select('*').order('created_at', { ascending: false });
             const tbody = document.getElementById('tx-table-body');
@@ -120,25 +166,27 @@
             }
         }
 
-        // 2. ACC Transaksi Jadi PAID (Lunas)
         async function accTransaksi(id) {
             await _supabase.from('transactions').update({ status: 'PAID' }).eq('id', id);
             loadTransactions();
         }
 
-        // 3. Simpan settingan Akun Pembayaran
         document.getElementById('method-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('set-id').value;
             const account_number = document.getElementById('set-number').value;
             const account_name = document.getElementById('set-name').value;
 
-            await _supabase.from('payment_methods').upsert({ id, account_number, account_name, is_active: true });
+            // set type otomatis
+            let type = 'E-Wallet';
+            if(id === 'qris') type = 'QRIS';
+            if(id === 'seabank') type = 'Bank';
+
+            await _supabase.from('payment_methods').upsert({ id, name: id.toUpperCase(), type, account_number, account_name, is_active: true });
             alert('Metode Pembayaran Terupdate!');
             document.getElementById('method-form').reset();
         });
 
-        // 4. Load & Simpan Sosmed
         async function loadSocials() {
             const { data } = await _supabase.from('admin_socials').select('*').eq('id', 1).single();
             if(data) {
