@@ -20,7 +20,7 @@ let adminSocials = {
     telegram_username: 'fajrush_admin'
 };
 
-// --- ROUTE DIREKTORI UTAMA ---
+// --- ROUTE UTAMA ---
 app.get('/', (req, res) => {
     res.send('<h1>Server Fajrush Payment Aktif!</h1><p>Akses <a href="/admin">/admin</a> untuk masuk ke panel.</p>');
 });
@@ -34,27 +34,26 @@ app.get('/invoice', (req, res) => {
 });
 
 // --- ROUTE API ---
-app.get('/api/payment-methods', (req, res) => { res.json(paymentMethods); });
+app.get('/api/payment-methods', (req, res) => { 
+    res.json(paymentMethods); 
+});
 
 app.post('/api/payment-methods/save', (req, res) => {
     const { id, name, type, account_number, account_name, is_active } = req.body;
     const index = paymentMethods.findIndex(item => item.id === id);
     const newData = { id, name, type, account_number, account_name, is_active: is_active === 'true' };
-    if (index !== -1) paymentMethods[index] = newData; else paymentMethods.push(newData);
+    if (index !== -1) { paymentMethods[index] = newData; } else { paymentMethods.push(newData); }
     res.json({ success: true, message: 'Metode pembayaran berhasil diperbarui!' });
 });
 
-app.get('/api/admin-socials', (req, res) => { res.json(adminSocials); });
+app.get('/api/admin-socials', (req, res) => { 
+    res.json(adminSocials); 
+});
 
 app.post('/api/admin-socials/save', (req, res) => {
     const { active_platform, whatsapp_number, whatsapp_message, telegram_username } = req.body;
     adminSocials = { active_platform, whatsapp_number, whatsapp_message, telegram_username };
     res.json({ success: true, message: 'Setting sosmed berhasil diperbarui!' });
 });
-
-// Supaya bisa dijalankan local maupun serverless
-if (process.env.NODE_ENV !== 'production') {
-    app.listen(3000, () => console.log('Jalan di port 3000'));
-}
 
 module.exports = app;
