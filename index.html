@@ -47,7 +47,7 @@
             </button>
             <button id="btn-seabank" onclick="selectPayment('seabank')" class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:border-slate-600 transition-all flex flex-col items-center justify-center text-center group">
                 <i class="fas fa-university text-2xl text-orange-400 group-hover:scale-110 transition-transform mb-2"></i>
-                <span class="font-bold text-sm tracking-wide">TEPI LAUT</span>
+                <span class="font-bold text-sm tracking-wide">SEABANK</span>
             </button>
         </div>
 
@@ -55,13 +55,10 @@
             <h3 id="display-title" class="font-extrabold text-base tracking-widest mb-4 text-indigo-400"></h3>
             
             <div id="area-qris" class="hidden flex flex-col items-center justify-center">
-                <div onclick="openZoom()" class="p-2 bg-white rounded-2xl mb-2 shadow-lg cursor-zoom-in hover:opacity-90 transition relative group max-w-[260px] w-full">
-                    <img id="img-qris" src="" alt="QRIS HD" class="w-full h-auto object-contain rounded-xl">
-                    <div class="absolute inset-0 bg-black/40 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <span class="text-xs font-bold text-white"><i class="fas fa-search-plus mr-1"></i> Klik Perbesar</span>
-                    </div>
+                <div onclick="openZoom()" class="p-3 bg-white rounded-2xl mb-2 shadow-lg cursor-zoom-in hover:opacity-95 transition max-w-[280px] w-full">
+                    <img id="img-qris" src="" alt="QRIS HD" class="w-full h-auto object-contain rounded-lg" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
                 </div>
-                <p class="text-[10px] text-slate-500 mb-3">Ketuk gambar QRIS untuk memperbesar</p>
+                <p class="text-[11px] text-indigo-400 animate-pulse mb-3"><i class="fas fa-search-plus"></i> Ketuk gambar QRIS untuk memperbesar (Full HD)</p>
             </div>
 
             <div id="area-transfer" class="hidden flex flex-col items-center justify-center">
@@ -90,19 +87,20 @@
         <div class="absolute top-4 right-4 text-white text-xl bg-slate-900/80 w-10 h-10 rounded-full flex items-center justify-center border border-slate-700">
             <i class="fas fa-times"></i>
         </div>
-        <img id="img-zoom" src="" alt="QRIS JUMBO" class="max-w-full max-h-[85vh] object-contain rounded-2xl border-2 border-white/20 shadow-2xl">
-        <p class="text-slate-500 text-xs mt-4 tracking-wider"><i class="fas fa-compress mr-1"></i> Klik di mana saja untuk mengecilkan</p>
+        <img id="img-zoom" src="" alt="QRIS JUMBO" class="max-w-full max-h-[85vh] object-contain rounded-2xl border-4 border-white shadow-2xl" style="image-rendering: -webkit-optimize-contrast;">
+        <p class="text-slate-400 text-xs mt-4 tracking-wider"><i class="fas fa-compress mr-1"></i> Klik di mana saja untuk mengecilkan</p>
     </div>
 
     <script>
-        // ISI KONTAK ADMIN KAMU DI SINI
+        // MASUKKAN NOMOR HP / USERNAME KAMU DI SINI
         const configAdmin = {
             whatsapp: "6281234567890", // Awali dengan 62
-            telegram: "username_admin_kamu" // Username telegram tanpa @
+            telegram: "username_admin_kamu" 
         };
 
+        // Mengunci link QRIS mentah HD milikmu langsung ke sistem dasar
         const defaultPayment = {
-            qris: "https://placehold.co/200x200/png?text=QRIS+READY",
+            qris: "https://i.ibb.co/KzDNvRK6/image.png", // Direct Link HD QRIS kamu
             dana: "0812-3456-7890",
             gopay: "0812-8888-9999",
             seabank: "901-222-333-444"
@@ -119,28 +117,21 @@
             }
         }
 
-        // FUNGSI KLIK TOMBOL PEMBAYARAN (FIXED 100% RESPONSIVE)
         function selectPayment(method) {
             selectedMethod = method;
             const liveData = getUpdatedData();
             
-            // Efek menyalakan tombol aktif
+            // Efek glow aktif
             ['qris', 'dana', 'gopay', 'seabank'].forEach(m => {
                 document.getElementById(`btn-${m}`).classList.remove('active-glow');
             });
             document.getElementById(`btn-${method}`).classList.add('active-glow');
 
-            // Buka kotak detail utama di bawahnya
+            // Buka kotak detail utama
             document.getElementById('detail-box').classList.remove('hidden');
-            
-            // Teks judul box konfirmasi
-            if (method === 'seabank') {
-                document.getElementById('display-title').textContent = "METODE: TEPI LAUT";
-            } else {
-                document.getElementById('display-title').textContent = `METODE: ${method.toUpperCase()}`;
-            }
+            document.getElementById('display-title').textContent = `METODE: ${method.toUpperCase()}`;
 
-            // Logika pemisahan tampilan QRIS vs Nomor Rekening
+            // Pisahkan tampilan QRIS dan Nomer Rekening
             if(method === 'qris') {
                 document.getElementById('area-transfer').classList.add('hidden');
                 document.getElementById('area-qris').classList.remove('hidden');
@@ -153,7 +144,6 @@
             }
         }
 
-        // FUNGSI ZOOM POPUP MODAL
         function openZoom() {
             document.getElementById('zoom-modal').classList.remove('hidden');
             document.getElementById('zoom-modal').classList.add('flex');
@@ -178,9 +168,7 @@
             const formatWaktu = waktuSekarang.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + " WIB";
             const randomID = "TRX-" + Math.floor(100000 + Math.random() * 900000);
 
-            const namaMetodeTeks = selectedMethod === 'seabank' ? 'TEPI LAUT' : selectedMethod.toUpperCase();
-
-            const teksPesan = `HALO ADMIN, SAYA SUDAH TRANSFER PENGGUNA ✨\n\n📝 DETAIL TRANSAKSI LENGKAP:\n----------------------------------\n🆔 ID Transaksi : ${randomID}\n💳 Metode Bayar : ${namaMetodeTeks}\n📅 Tanggal      : ${formatTanggal}\n⏰ Waktu/Jam    : ${formatWaktu}\n🟢 Status       : BERHASIL DI-TRANSFER\n----------------------------------\n\nMohon dicek ya min, bukti screenshot transfer saya lampirkan di bawah ini.`;
+            const teksPesan = `HALO ADMIN, SAYA SUDAH TRANSFER PENGGUNA ✨\n\n📝 DETAIL TRANSAKSI LENGKAP:\n----------------------------------\n🆔 ID Transaksi : ${randomID}\n💳 Metode Bayar : ${selectedMethod.toUpperCase()}\n📅 Tanggal      : ${formatTanggal}\n⏰ Waktu/Jam    : ${formatWaktu}\n🟢 Status       : BERHASIL DI-TRANSFER\n----------------------------------\n\nMohon dicek ya min, bukti screenshot transfer saya lampirkan di bawah ini.`;
             const encodedText = encodeURIComponent(teksPesan);
 
             if(platform === 'whatsapp') {
