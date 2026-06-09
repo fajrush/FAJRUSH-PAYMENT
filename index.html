@@ -11,7 +11,7 @@
 <body class="bg-gray-950 text-gray-100 flex items-center justify-center min-h-screen p-4">
 
     <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-2xl">
-        <h2 class="text-xl font-bold mb-1 text-white text-center">Form Pembayaran otomatis</h2>
+        <h2 class="text-xl font-bold mb-1 text-white text-center">Fajrush Payment</h2>
         <p class="text-gray-400 text-xs text-center mb-6">Silakan isi data dan pilih metode pembayaran</p>
 
         <form id="checkout-form" class="space-y-4">
@@ -80,7 +80,6 @@
             const amount = document.getElementById('pay-amount').value;
             const invId = 'INV-' + Math.floor(1000 + Math.random() * 9000);
 
-            // Simpan transaksi langsung ke Supabase
             const { error } = await _supabase.from('transactions').insert([
                 { id: invId, phone_number: phone, amount: parseInt(amount), method: selectedMethod, status: 'PENDING' }
             ]);
@@ -88,7 +87,7 @@
             if(!error) {
                 window.location.href = `/invoice.html?id=${invId}`;
             } else {
-                alert('Gagal membuat invoice: ' + error.message);
+                alert('Gagal: ' + error.message);
             }
         });
     </script>
