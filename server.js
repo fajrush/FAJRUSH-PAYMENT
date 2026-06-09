@@ -1,49 +1,32 @@
-// Tambahkan data default Sosial Media Admin
-let adminSocials = {
-    active_platform: 'whatsapp', // Pilihan: 'whatsapp' atau 'telegram'
-    whatsapp_number: '6281234567890',
-    whatsapp_message: 'Halo Admin, saya sudah transfer untuk invoice tersebut. Tolong diproses ya!',
-    telegram_username: 'AdminTokoBot'
-};
+const express = require('express');
+const { createClient } = require('@supabase/supabase-js');
+const app = express();
+const path = require('path');
 
-// API: Ambil data sosial media admin
-app.get('/api/admin-socials', (req, res) => {
-    res.json(adminSocials);
+app.use(express.json());
+
+// Inisialisasi Supabase (Dapatkan URL dan KEY dari dashboard Supabase gratisan)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// API: Ambil semua metode pembayaran langsung dari Database Cloud
+app.get('/api/payment-methods', async (req, res) => {
+    const { data, error } = await supabase.from('payment_methods').select('*');
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
 });
 
-// API: Update data sosial media dari Admin Panel
-app.post('/api/admin-socials/save', (req, res) => {
-    const { active_platform, whatsapp_number, whatsapp_message, telegram_username } = req.body;
+// API: Update Metode Pembayaran dari Admin Panel ke Database Cloud
+app.post('/api/payment-methods/save', async (req, res) => {
+    const { id, name, type, account_number, account_name, is_active } = req.body;
     
-    adminSocials = {
-        active_platform,
-        whatsapp_number,
-        whatsapp_message,
-        telegram_username
-    };
-    
-    res.json({ success: true, message: 'Setting Pengalihan Sosmed berhasil disimpan!' });
+    const { data, error } = await supabase
+        .from('payment_methods')
+        .upsert({ id, name, type, account_number, account_name, is_active: is_active === 'true' });
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, message: 'Metode pembayaran aman tersimpan di cloud!' });
 });
 
-// API: Cek status invoice (Digunakan oleh halaman invoice pembeli untuk auto-redirect)
-app.get('/api/invoice-status/:id', (req, res) => {
-    const invId = req.params.id;
-    const tx = transactions.find(t => t.id === invId);
-    
-    if (!tx) {
-        return res.status(404).json({ error: 'Invoice tidak ditemukan' });
-    }
-
-    // Jika sudah lunas, berikan data redirect-nya
-    let redirectUrl = '';
-    if (tx.status === 'PAID') {
-        if (adminSocials.active_platform === 'whatsapp') {
-            const encodedMsg = encodeURIComponent(adminSocials.whatsapp_message + ` (ID: ${invId})`);
-            redirectUrl = `https://wa.me/${adminSocials.whatsapp_number}?text=${encodedMsg}`;
-        } else if (adminSocials.active_platform === 'telegram') {
-            redirectUrl = `https://t.me/${adminSocials.telegram_username}`;
-        }
-    }
-
-    res.json({ status: tx.status, redirectUrl });
-});
+// ... Sisa API untuk admin-socials sesuaikan dengan pola upsert Supabase yang sama
